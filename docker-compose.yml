@@ -11,7 +11,9 @@ services:
     tty: true
     environment:
       TZ: Asia/Tokyo
-    command: npm run serve
+    command: >                                        # 初回起動時（モジュールインストール前）のみinstallを実行
+      /bin/sh -c "[ -d node_modules ] 
+      || npm install || true && npm run serve"
     networks:
       - default
   api:
@@ -27,7 +29,9 @@ services:
       TZ: Asia/Tokyo
     depends_on:
       - db
-    command: npm run start
+    command: >                                        # 初回起動時（モジュールインストール前）のみinstallを実行
+      /bin/sh -c "[ -d node_modules ] 
+      || npm install || true && npm run start"
     networks:
       - default
   db:

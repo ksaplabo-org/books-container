@@ -7,7 +7,7 @@ BookStationで学習もとい研修を行う上での問題点（**環境構築�
 
 ## 成果物
 今回環境構築するために作成・編集したファイルは以下の通りです。  
-以下のファイル群を用意して、Dockerコマンド2回実行するだけで、サーバーの構築、起動までが完了します。
+以下のファイル群を用意して、Dockerコマンドを2回実行するだけで、サーバーの構築、起動までが完了します。
 
 ```
 Book Station/
@@ -36,42 +36,40 @@ Book Station/
 ### appコンテナ作成
 まずはBook Staitonを構成するWebサーバの部分のコンテナから作成/定義していきます。
 
-**docker/app/Dockerfile**
+**/Book Station/docker/app/Dockerfile**
 ```docker
 FROM node:12.13-alpine
 
 WORKDIR /app
 
-RUN npm install
 ```
 
 FROM句では、コンテナのベースイメージを決定しています。（今回はalpine上で動作するnode.js v12.13を選んでいます。）
 
-WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定しています。今回の場合、立ち上がったappコンテナ内の`/app`以下でRUN句以降の処理を行っている、ということになります。
-
-RUN句では、`npm install`を行い、front側で必要なライブラリ等を準備していきます。
-
-**//TODO**  
-`npm install`を実行してもらう予定でしたが、実行されず。。仕方なく、ローカルで`npm install`を実行してnode_moduleをインストールしました。(backend側も同様)
+WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定しています。今回の場合、立ち上がったappコンテナ内の`/app`以下でそれ以降の処理が行われる、ということになります。  
+※今回RUN句などの後続処理を用意をしていないため、WORKDIR句自体不要でありますが、今後やりたい事ができたとき用に指定だけしておきます。
 
 以下は、`Docker-compose.yml`のappコンテナの定義になります。  
-毎回起動コマンドを実行するのも面倒なので、ymlファイルに`npm run serve`を記述して、コンテナ起動時に代わりに実行してもらいます。
+パッケージを用意するための`npm install`と、サーバーを起動するためのコマンドをコンテナ起動時に代わりに実行してもらいます。  
+※node_moduleフォルダの有無を確認し、フォルダが存在しないときのみ`npm install`コマンドが実行されるようにしているため、コンテナ起動毎にインストールが行われることはありません。
 
-**/BOOK STATION/docker-compose.yml**
+**/Book Station/docker-compose.yml**
 ```yml
   app:
     container_name: app_container   # コンテナ名
     build: ./docker/app             # Dockerfileの配置場所
-    ports:
+      ports:
       - 8080:8080                   # ポートフォワーディングの設定
-    volumes:
+      volumes:
       - ./books/front:/app          # Vueプロジェクトのfrontフォルダとコンテナ内のappをマウント
     stdin_open: true                # ホストマシンの入力をコンテナに伝えるための記述
     tty: true                       # プロセスが終了した際に、コンテナを終了させないための記述
-    environment:
+      environment:
       TZ: Asia/Tokyo                # タイムゾーンを変更
-    command: npm run serve          # コンテナ起動時に実行するコマンド
-    networks:
+    command: >                      # コンテナ起動時に実行するコマンド
+        /bin/sh -c "[ -d node_modules ] 
+        || npm install || true && npm run serve"
+      networks:
       - default                     # コンテナ間で通信のために使用するネットワークを明示
 ```
 
@@ -79,28 +77,23 @@ RUN句では、`npm install`を行い、front側で必要なライブラリ等�
 次に、Book Staitonを構成するAPIサーバの部分のコンテナを作成/定義していきます。  
 とは言え、イメージの作成まではappコンテナとほぼ同じものになります。
 
-**docker/api/Dockerfile**
+**/Book Station/docker/api/Dockerfile**
 ```docker
 FROM node:12.13-alpine
 
 WORKDIR /api
 
-RUN npm install
 ```
 
 FROM句では、コンテナのベースイメージを決定しています。（appコンテナ同様に、alpine上で動作するnode.js v12.13を選んでいます。）
 
-WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定しています。今回の場合、立ち上がったappコンテナ内の`/app`以下でRUN句以降の処理を行っている、ということになります。
+WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定しています。今回の場合、立ち上がったapiコンテナ内の`/api`以下でそれ以降の処理が行われる、ということになります。  
+※今回RUN句などの後続処理を用意をしていないため、WORKDIR句自体不要でありますが、今後やりたい事ができたとき用に指定だけしておきます。
 
-RUN句では、`npm install`を行い、backend側で必要なライブラリ等を準備していきます。
+以下は、`Docker-compose.yml`のapiコンテナの定義になります。  
+こちらもappコンテナ同様、パッケージを用意するための`npm install`と、サーバーを起動するためのコマンドをコンテナ起動時に代わりに実行してもらいます。
 
-**//TODO**  
-Appコンテナ同様に、`npm install`を実行してもらう予定でしたが、実行されず。。仕方なく、ローカルで`npm install`を実行してnode_moduleをインストールしました。
-
-以下は、`docker-compose.yml`のapiコンテナの定義になります。  
-こちらもappコンテナ同様、ymlファイルに`npm run start`を記述して、コンテナ起動時に代わりに実行してもらいます。
-
-**/BOOK STATION/docker-compose.yml**
+**/Book Station/docker-compose.yml**
 ```yml
   api:
     container_name: api_container   # コンテナ名
@@ -115,7 +108,9 @@ Appコンテナ同様に、`npm install`を実行してもらう予定でした�
       TZ: Asia/Tokyo                # タイムゾーンを変更
     depends_on:
       - db                          # dbが起動した後にapiを起動するための指定
-    command: npm run start          # コンテナ起動時に実行するコマンド
+    command: >                      # コンテナ起動時に実行するコマンド
+      /bin/sh -c "[ -d node_modules ] 
+      || npm install || true && npm run start"
     networks:
       - default                     # コンテナ間で通信のために使用するネットワークを明示
 ```
@@ -124,7 +119,7 @@ Appコンテナ同様に、`npm install`を実行してもらう予定でした�
 devserver > proxy > /api > target の値を`http://api:3000`とします。  
 （もともとは`http://localhost:3000`）
 
-**/BOOK STATION/books/front/vue.config.js**（一部抜粋）
+**/Book Station/books/front/vue.config.js**（一部抜粋）
 ```js
     devServer: {
       https: true,
@@ -148,13 +143,13 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 これはかなり都合の良い話なのですが、Docker-composeを使用して立ち上げたコンテナはデフォルトで、サービス名を指定するだけでアクセス可能となります。（Docker様々。。！）  
 今回の場合、`docker-compose.yml`で記載した「`api`」を指定するだけで通信が行えます。
 
-**/BOOK STATION/docker-compose.yml**
+**/Book Station/docker-compose.yml**
 ```yml
   api:                              # サービス名はここ！
     container_name: api_container
     build: ./docker/api
     ports:
-      - 3000:3000                   
+      - 3000:3000
 
 # ～中略～
 ```
@@ -162,7 +157,7 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 ### dbコンテナ作成
 最後にDBサーバのコンテナを作成/定義していきます。
 
-**docker/db/Dockerfile**
+**/Book Station/docker/db/Dockerfile**
 ```docker
 FROM mysql:8.0.39-debian
 
@@ -190,7 +185,7 @@ RUN句では、その設定ファイルに対して適切な権限を付与し�
 以下は、`Docker-compose.yml`のappコンテナの定義になります。  
 コマンドの登録はありませんが、初期提供データの設定を記述しています。
 
-**/BOOK STATION/docker-compose.yml**
+**/Book Station/docker-compose.yml**
 ```yml
   db:
     container_name: db_container                        # コンテナ名
@@ -213,7 +208,7 @@ RUN句では、その設定ファイルに対して適切な権限を付与し�
 上記のdocker-compose.ymlで使用している`.env`は以下の通りです。  
 DBの名前やアカウントの情報を別ファイルで管理することで、docker-compose.ymlに直書きすることを防いでいます。
 
-**BOOK STATION/.env**
+**/Book Station/.env**
 ```
 MYSQL_DATABASE=intern
 MYSQL_USER=intern
@@ -224,7 +219,7 @@ MYSQL_ROOT_PASSWORD=intern
 MySQLへの接続を実現するために、`vue.config.js`を編集します。  
 APIサーバへのアクセス時の同様に、localhostではdbコンテナにアクセスできないため、サービス名を指定してDBとのやり取りを実現させます。
 
-**/BOOK STATION/books/backend/db/utility.js**
+**/Book Station/books/backend/db/utility.js**
 ```js
 const Sequelize = require("sequelize");
 
@@ -247,13 +242,12 @@ module.exports.connect = function () {
 }
 ```
 
-
 上記の設定でdbコンテナの作成はほぼ完了となります。  
 後は、初期提供データを投入するためのクエリと文字コードなどの設定ファイルを用意して完了となります。
 
 初期提供データのほうは割愛しますが、MySQLの設定ファイルは以下のようになっています。
 
-**BOOK STATION/docker/db/my.cnf**
+**/Book Station/docker/db/my.cnf**
 ```
 [mysqld]
 character-set-server=utf8mb4
@@ -317,15 +311,10 @@ docker ps
 https://localhost:8080/public/pages/signin.html
 ```
 
-ばっちりみたいです！（init.sqlをさぼったのでお知らせ情報が登録されていませんが。。）
+ちゃんと初期提供データ登録用のSQLが実行できているみたいでよかったです！
 ![Book Station Signin](img/BookStation-Docker_06.png)
 
-念のため、ユーザー一覧を確認してみます。
-
-ちゃんと初期提供データのSQLも実行できているみたいでよかったです！
-![Book Station ListUser](img/BookStation-Docker_07.png)
-
-Dockerコンテナを停止する際には以下のコマンドを実行してください。
+最後にアプリを終了する際には、以下のコマンドを実行してください。
 ```docker
 docker-compose stop
 ```
@@ -342,8 +331,6 @@ docker-compose stop
 
     ローカルにBooksリポジトリの内容をクローンしてください。  
     ブランチは「**docker/docker-compose**」になります。
-
-    **※クローンが作成出来たら、front,backendそれぞれの階層で`npm install`を実行してください。（本来であれば不要な手順ですが、まだそこまで対応できていないため）**
 
 2. コンテナ作成に必要なファイル群を適切な場所に配置
 
