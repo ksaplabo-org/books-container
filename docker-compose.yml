@@ -6,7 +6,7 @@ services:
     ports:
       - 8080:8080
     volumes:
-      - ./books/front:/app
+      - ../books/front:/app
     stdin_open: true
     tty: true
     environment:
@@ -22,7 +22,7 @@ services:
     ports:
       - 3000:3000
     volumes:
-      - ./books/backend:/api
+      - ../books/backend:/api
     tty: true
     environment:
       CHOKIDAR_USEPOLLING: 1
