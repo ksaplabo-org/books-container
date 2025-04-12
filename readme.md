@@ -10,8 +10,8 @@ BookStationで学習もとい研修を行う上での問題点（**環境構築�
 以下のファイル群を用意して、Dockerコマンドを2回実行するだけで、サーバーの構築、起動までが完了します。
 
 ```
-Book Station/                #booksリポジトリ
-├── books/
+Book Station/
+├── books/                   #booksリポジトリ
 │   ├── backend
 │   ├── front
 │   └── :                    #省略
