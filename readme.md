@@ -10,24 +10,26 @@ BookStationで学習もとい研修を行う上での問題点（**環境構築�
 以下のファイル群を用意して、Dockerコマンドを2回実行するだけで、サーバーの構築、起動までが完了します。
 
 ```
-Book Station/
+Book Station/                #booksリポジトリ
 ├── books/
 │   ├── backend
 │   ├── front
-│   └── :                    #booksリポジトリをCloneしたものであるため省略
-├── db/
-│   └── init_db/
-│       └── test.sql         #初期データ登録用
-├── docker/
-│   ├── api/
-│   │   └── Dockerfile       #apiコンテナ作成用
-│   ├── app/
-│   │   └── Dockerfile       #appコンテナ作成用
-│   └── db/
-│       ├── Dockerfile       #dbコンテナ作成用
-│       └── my.cnf           #MySQLの文字コード設定用
-├── .env                     #MySQLで使用する環境変数を記述
-└── docker-compose.yml       #dockercomposeファイル
+│   └── :                    #省略
+│   
+└── books-container/         #本リポジトリ
+    ├── db/
+    │   └── init_db/
+    │       └── test.sql     #初期データ登録用
+    ├── docker/
+    │   ├── api/
+    │   │   └── Dockerfile   #apiコンテナ作成用
+    │   ├── app/
+    │   │   └── Dockerfile   #appコンテナ作成用
+    │   └── db/
+    │       ├── Dockerfile   #dbコンテナ作成用
+    │       └── my.cnf       #MySQLの文字コード設定用
+    ├── .env                 #MySQLで使用する環境変数を記述
+    └── docker-compose.yml   #dockercomposeファイル
 ```
 
 次の章からコンテナ環境の作成手順をファイル毎に説明していきます。
@@ -36,7 +38,7 @@ Book Station/
 ### appコンテナ作成
 まずはBook Staitonを構成するWebサーバの部分のコンテナから作成/定義していきます。
 
-**/Book Station/docker/app/Dockerfile**
+**/Book Station/books-container/docker/app/Dockerfile**
 ```docker
 FROM node:12.13-alpine
 
@@ -49,11 +51,11 @@ FROM句では、コンテナのベースイメージを決定しています。�
 WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定しています。今回の場合、立ち上がったappコンテナ内の`/app`以下でそれ以降の処理が行われる、ということになります。  
 ※今回RUN句などの後続処理を用意をしていないため、WORKDIR句自体不要でありますが、今後やりたい事ができたとき用に指定だけしておきます。
 
-以下は、`Docker-compose.yml`のappコンテナの定義になります。  
+以下は、`docker-compose.yml`のappコンテナの定義になります。  
 パッケージを用意するための`npm install`と、サーバーを起動するためのコマンドをコンテナ起動時に代わりに実行してもらいます。  
 ※node_moduleフォルダの有無を確認し、フォルダが存在しないときのみ`npm install`コマンドが実行されるようにしているため、コンテナ起動毎にインストールが行われることはありません。
 
-**/Book Station/docker-compose.yml**
+**/Book Station/books-container/docker-compose.yml**
 ```yml
   app:
     container_name: app_container   # コンテナ名
@@ -61,7 +63,7 @@ WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定し
       ports:
       - 8080:8080                   # ポートフォワーディングの設定
       volumes:
-      - ./books/front:/app          # Vueプロジェクトのfrontフォルダとコンテナ内のappをマウント
+      - ../books/front:/app         # Vueプロジェクトのfrontフォルダとコンテナ内のappをマウント
     stdin_open: true                # ホストマシンの入力をコンテナに伝えるための記述
     tty: true                       # プロセスが終了した際に、コンテナを終了させないための記述
       environment:
@@ -77,7 +79,7 @@ WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定し
 次に、Book Staitonを構成するAPIサーバの部分のコンテナを作成/定義していきます。  
 とは言え、イメージの作成まではappコンテナとほぼ同じものになります。
 
-**/Book Station/docker/api/Dockerfile**
+**/Book Station/books-container/docker/api/Dockerfile**
 ```docker
 FROM node:12.13-alpine
 
@@ -90,10 +92,10 @@ FROM句では、コンテナのベースイメージを決定しています。�
 WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定しています。今回の場合、立ち上がったapiコンテナ内の`/api`以下でそれ以降の処理が行われる、ということになります。  
 ※今回RUN句などの後続処理を用意をしていないため、WORKDIR句自体不要でありますが、今後やりたい事ができたとき用に指定だけしておきます。
 
-以下は、`Docker-compose.yml`のapiコンテナの定義になります。  
+以下は、`docker-compose.yml`のapiコンテナの定義になります。  
 こちらもappコンテナ同様、パッケージを用意するための`npm install`と、サーバーを起動するためのコマンドをコンテナ起動時に代わりに実行してもらいます。
 
-**/Book Station/docker-compose.yml**
+**/Book Station/books-container/docker-compose.yml**
 ```yml
   api:
     container_name: api_container   # コンテナ名
@@ -101,7 +103,7 @@ WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定し
     ports:
       - 3000:3000                   # ポートフォワーディングの設定
     volumes:
-      - ./books/backend:/api        # Vueプロジェクトのfrontフォルダとコンテナ内のappをマウント
+      - ../books/backend:/api       # Vueプロジェクトのfrontフォルダとコンテナ内のappをマウント
     tty: true                       # プロセスが終了した際に、コンテナを終了させないための記述
     environment:
       CHOKIDAR_USEPOLLING: 1        # ホットリロードの有効化
@@ -143,7 +145,7 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 これはかなり都合の良い話なのですが、Docker-composeを使用して立ち上げたコンテナはデフォルトで、サービス名を指定するだけでアクセス可能となります。（Docker様々。。！）  
 今回の場合、`docker-compose.yml`で記載した「`api`」を指定するだけで通信が行えます。
 
-**/Book Station/docker-compose.yml**
+**/Book Station/books-container/docker-compose.yml**
 ```yml
   api:                              # サービス名はここ！
     container_name: api_container
@@ -157,7 +159,7 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 ### dbコンテナ作成
 最後にDBサーバのコンテナを作成/定義していきます。
 
-**/Book Station/docker/db/Dockerfile**
+**/Book Station/books-container/docker/db/Dockerfile**
 ```docker
 FROM mysql:8.0.39-debian
 
@@ -185,7 +187,7 @@ RUN句では、その設定ファイルに対して適切な権限を付与し�
 以下は、`Docker-compose.yml`のappコンテナの定義になります。  
 コマンドの登録はありませんが、初期提供データの設定を記述しています。
 
-**/Book Station/docker-compose.yml**
+**/Book Station/books-container/docker-compose.yml**
 ```yml
   db:
     container_name: db_container                        # コンテナ名
@@ -208,7 +210,7 @@ RUN句では、その設定ファイルに対して適切な権限を付与し�
 上記のdocker-compose.ymlで使用している`.env`は以下の通りです。  
 DBの名前やアカウントの情報を別ファイルで管理することで、docker-compose.ymlに直書きすることを防いでいます。
 
-**/Book Station/.env**
+**/Book Station/books-container/.env**
 ```
 MYSQL_DATABASE=intern
 MYSQL_USER=intern
@@ -247,7 +249,7 @@ module.exports.connect = function () {
 
 初期提供データのほうは割愛しますが、MySQLの設定ファイルは以下のようになっています。
 
-**/Book Station/docker/db/my.cnf**
+**/Book Station/books-container/docker/db/my.cnf**
 ```
 [mysqld]
 character-set-server=utf8mb4
@@ -337,24 +339,26 @@ docker-compose stop
     本リポジトリから、環境構築に必要なファイルを**クローンしたブランチと同じ階層**に配置します。  
     以下の配置になっていればOKです。（ルートディレクトリの名前は適当です）
     ```
-    Book Station/
+    Book Station/                #booksリポジトリ
     ├── books/
     │   ├── backend
     │   ├── front
-    │   └── :                    #booksリポジトリをCloneしたものであるため省略
-    ├── db/
-    │   └── init_db/
-    │       └── test.sql         #初期データ登録用
-    ├── docker/
-    │   ├── api/
-    │   │   └── Dockerfile       #apiコンテナ作成用
-    │   ├── app/
-    │   │   └── Dockerfile       #appコンテナ作成用
-    │   └── db/
-    │       ├── Dockerfile       #dbコンテナ作成用
-    │       └── my.cnf           #MySQLの文字コード設定用
-    ├── .env                     #MySQLで使用する環境変数を記述
-    └── docker-compose.yml       #dockercomposeファイル
+    │   └── :                    #省略
+    │   
+    └── books-container/         #本リポジトリ
+        ├── db/
+        │   └── init_db/
+        │       └── test.sql     #初期データ登録用
+        ├── docker/
+        │   ├── api/
+        │   │   └── Dockerfile   #apiコンテナ作成用
+        │   ├── app/
+        │   │   └── Dockerfile   #appコンテナ作成用
+        │   └── db/
+        │       ├── Dockerfile   #dbコンテナ作成用
+        │       └── my.cnf       #MySQLの文字コード設定用
+        ├── .env                 #MySQLで使用する環境変数を記述
+        └── docker-compose.yml   #dockercomposeファイル
     ```
 
 3. Docker Desktopのインストール
