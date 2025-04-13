@@ -123,16 +123,16 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 
 **/Book Station/books/front/vue.config.js**（一部抜粋）
 ```js
-    devServer: {
-      https: true,
-      port: 8080,
-      proxy: {
-          '/api': {
-              target: "http://api:3000",
-              changeOrigin: true,
-          }
+  devServer: {
+    https: true,
+    port: 8080,
+    proxy: {
+      '/api': {
+        target: "http://api:3000",
+        changeOrigin: true,
       }
-  } 
+    }
+  }
 ```
 
 これは、Book Stationの実行環境の違いによるものが原因となっています。
@@ -155,6 +155,35 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 
 # ～中略～
 ```
+
+#### 補足（2025/04/13追記）
+これまでの実装の問題点として、frontendソースのホットリロードが実行されないという問題点がありました。  
+コンテナを使用していない環境の場合は自動でコンパイルが走っていましたが、コンテナ環境の場合は別途設定が必要になります。
+
+vue.config.jsに以下の設定を追記します。  
+**/Book Station/books/front/vue.config.js**（一部抜粋）
+```js
+  devServer: {
+    https: true,
+    port: 8080,
+    proxy: {
+      '/api': {
+        target: "http://api:3000",
+        changeOrigin: true,
+      }
+    },
+    watchOptions: {               // 追記箇所
+      ignored: /node_modules/,
+      poll: true
+    }
+  }
+```
+
+今回追記した`watchOptions`という設定は、ソースコードの更新状況を監視して都度コンパイルを実行してくれるものになります。  
+また、コンパイルの短縮のために`ignored`を設定して監視範囲を絞り、開発の効率化を図っています。
+
+`watchOptions`の詳細は、以下のリンクを参考にしてください。  
+[watchOptionsの詳細](https://webpack.js.org/configuration/watch/)
 
 ### dbコンテナ作成
 最後にDBサーバのコンテナを作成/定義していきます。
@@ -339,8 +368,8 @@ docker-compose stop
     本リポジトリから、環境構築に必要なファイルを**クローンしたブランチと同じ階層**に配置します。  
     以下の配置になっていればOKです。（ルートディレクトリの名前は適当です）
     ```
-    Book Station/                #booksリポジトリ
-    ├── books/
+    Book Station/
+    ├── books/                   #booksリポジトリ
     │   ├── backend
     │   ├── front
     │   └── :                    #省略
