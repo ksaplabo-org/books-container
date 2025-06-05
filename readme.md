@@ -10,7 +10,7 @@ BookStationで学習もとい研修を行う上での問題点（**環境構築�
 以下のファイル群を用意して、Dockerコマンドを2回実行するだけで、サーバーの構築、起動までが完了します。
 
 ```
-Book Station/
+BookStation/
 ├── books/                   #booksリポジトリ
 │   ├── backend
 │   ├── front
@@ -36,9 +36,9 @@ Book Station/
 
 ## コンテナ作成手順
 ### appコンテナ作成
-まずはBook Staitonを構成するWebサーバの部分のコンテナから作成/定義していきます。
+まずはBookStationを構成するWebサーバの部分のコンテナから作成/定義していきます。
 
-**/Book Station/books-container/docker/app/Dockerfile**
+**/BookStation/books-container/docker/app/Dockerfile**
 ```docker
 FROM node:12.13-alpine
 
@@ -55,7 +55,7 @@ WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定し
 パッケージを用意するための`npm install`と、サーバーを起動するためのコマンドをコンテナ起動時に代わりに実行してもらいます。  
 ※node_moduleフォルダの有無を確認し、フォルダが存在しないときのみ`npm install`コマンドが実行されるようにしているため、コンテナ起動毎にインストールが行われることはありません。
 
-**/Book Station/books-container/docker-compose.yml**
+**/BookStation/books-container/docker-compose.yml**
 ```yml
   app:
     container_name: app_container   # コンテナ名
@@ -76,10 +76,10 @@ WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定し
 ```
 
 ### apiコンテナ作成
-次に、Book Staitonを構成するAPIサーバの部分のコンテナを作成/定義していきます。  
+次に、BookStationを構成するAPIサーバの部分のコンテナを作成/定義していきます。  
 とは言え、イメージの作成まではappコンテナとほぼ同じものになります。
 
-**/Book Station/books-container/docker/api/Dockerfile**
+**/BookStation/books-container/docker/api/Dockerfile**
 ```docker
 FROM node:12.13-alpine
 
@@ -95,7 +95,7 @@ WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定し
 以下は、`docker-compose.yml`のapiコンテナの定義になります。  
 こちらもappコンテナ同様、パッケージを用意するための`npm install`と、サーバーを起動するためのコマンドをコンテナ起動時に代わりに実行してもらいます。
 
-**/Book Station/books-container/docker-compose.yml**
+**/BookStation/books-container/docker-compose.yml**
 ```yml
   api:
     container_name: api_container   # コンテナ名
@@ -121,7 +121,7 @@ WORKDIR句では、コンテナ内のどこで処理を行うかpathを指定し
 devserver > proxy > /api > target の値を`http://api:3000`とします。  
 （もともとは`http://localhost:3000`）
 
-**/Book Station/books/front/vue.config.js**（一部抜粋）
+**/BookStation/books/front/vue.config.js**（一部抜粋）
 ```js
   devServer: {
     https: true,
@@ -135,7 +135,7 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
   }
 ```
 
-これは、Book Stationの実行環境の違いによるものが原因となっています。
+これは、BookStationの実行環境の違いによるものが原因となっています。
 
 これまでの実行環境は、ホストPC内でサーバを起動していました。そのため、3000番ポートへのアクセスはlocalhostからそのままアクセス可能でした。  
 ただし、今回はそれぞれ独立したコンテナが3つ起動しているため、Appサーバがlocalhost:3000を参照しても、Appコンテナ内の3000番ポートを参照してしまう。といった状況になるのです。
@@ -145,7 +145,7 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 これはかなり都合の良い話なのですが、Docker-composeを使用して立ち上げたコンテナはデフォルトで、サービス名を指定するだけでアクセス可能となります。（Docker様々。。！）  
 今回の場合、`docker-compose.yml`で記載した「`api`」を指定するだけで通信が行えます。
 
-**/Book Station/books-container/docker-compose.yml**
+**/BookStation/books-container/docker-compose.yml**
 ```yml
   api:                              # サービス名はここ！
     container_name: api_container
@@ -161,7 +161,7 @@ devserver > proxy > /api > target の値を`http://api:3000`とします。
 コンテナを使用していない環境の場合は自動でコンパイルが走っていましたが、コンテナ環境の場合は別途設定が必要になります。
 
 vue.config.jsに以下の設定を追記します。  
-**/Book Station/books/front/vue.config.js**（一部抜粋）
+**/BookStation/books/front/vue.config.js**（一部抜粋）
 ```js
   devServer: {
     https: true,
@@ -188,7 +188,7 @@ vue.config.jsに以下の設定を追記します。
 ### dbコンテナ作成
 最後にDBサーバのコンテナを作成/定義していきます。
 
-**/Book Station/books-container/docker/db/Dockerfile**
+**/BookStation/books-container/docker/db/Dockerfile**
 ```docker
 FROM mysql:8.0.39-debian
 
@@ -216,7 +216,7 @@ RUN句では、その設定ファイルに対して適切な権限を付与し�
 以下は、`Docker-compose.yml`のappコンテナの定義になります。  
 コマンドの登録はありませんが、初期提供データの設定を記述しています。
 
-**/Book Station/books-container/docker-compose.yml**
+**/BookStation/books-container/docker-compose.yml**
 ```yml
   db:
     container_name: db_container                        # コンテナ名
@@ -239,7 +239,7 @@ RUN句では、その設定ファイルに対して適切な権限を付与し�
 上記のdocker-compose.ymlで使用している`.env`は以下の通りです。  
 DBの名前やアカウントの情報を別ファイルで管理することで、docker-compose.ymlに直書きすることを防いでいます。
 
-**/Book Station/books-container/.env**
+**/BookStation/books-container/.env**
 ```
 MYSQL_DATABASE=intern
 MYSQL_USER=intern
@@ -250,7 +250,7 @@ MYSQL_ROOT_PASSWORD=intern
 MySQLへの接続を実現するために、`vue.config.js`を編集します。  
 APIサーバへのアクセス時の同様に、localhostではdbコンテナにアクセスできないため、サービス名を指定してDBとのやり取りを実現させます。
 
-**/Book Station/books/backend/db/utility.js**
+**/BookStation/books/backend/db/utility.js**
 ```js
 const Sequelize = require("sequelize");
 
@@ -278,7 +278,7 @@ module.exports.connect = function () {
 
 初期提供データのほうは割愛しますが、MySQLの設定ファイルは以下のようになっています。
 
-**/Book Station/books-container/docker/db/my.cnf**
+**/BookStation/books-container/docker/db/my.cnf**
 ```
 [mysqld]
 character-set-server=utf8mb4
@@ -358,17 +358,17 @@ docker-compose stop
 ## Dockerでの環境構築に挑戦する方へ
 以下に環境構築の手順を簡単に記載しておきますので、やってみたい方は是非！
 
-1. cloneの作成
+1. リポジトリのクローン
 
-    ローカルにBooksリポジトリの内容をクローンしてください。  
-    ブランチは「**docker/docker-compose**」になります。
+    PCに以下のリポジトリのクローンを作成してください。
+    |ブランチ|リポジトリ|
+    |--|--|
+    |books|docker/docker-compose|
+    |books-container|master|
 
-2. コンテナ作成に必要なファイル群を適切な場所に配置
-
-    本リポジトリから、環境構築に必要なファイルを**クローンしたブランチと同じ階層**に配置します。  
     以下の配置になっていればOKです。（ルートディレクトリの名前は適当です）
     ```
-    Book Station/
+    BookStation/
     ├── books/                   #booksリポジトリ
     │   ├── backend
     │   ├── front
@@ -390,24 +390,76 @@ docker-compose stop
         └── docker-compose.yml   #dockercomposeファイル
     ```
 
-3. Docker Desktopのインストール
+2. ソースコードの修正
 
-    以下からインストールしてください。（悪質なサイトを疑う方は自力で調べてください）
+    Booksリポジトリのソースコードはコンテナを想定した実装になっていないため、以下の修正を実施してください。
+
+    **/BookStation/books/front/vue.config.js**（一部抜粋）
+    ```js
+      devServer: {
+        https: true,
+        port: 8080,
+        proxy: {
+          '/api': {
+            target: "http://api:3000",  // 修正箇所
+            changeOrigin: true,
+          }
+        },
+        watchOptions: {                 // 追記箇所
+          ignored: /node_modules/,
+          poll: true
+        }
+      }
+    ```
+
+    **/BookStation/books/backend/db/utility.js**
+    ```js
+    const Sequelize = require("sequelize");
+
+    /**
+    * DBコネクション取得
+    * @returns DBコネクション
+    */
+    module.exports.connect = function () {
+      return new Sequelize("intern", "intern", "intern", {
+        dialect: "mysql",
+        host: "db",         // 修正箇所
+        port: 3306,         // 追記箇所
+        pool: {
+          max: 5,
+          min: 1,
+          acquire: 30000,
+          idle: 10000
+        }
+      });
+    }
+    ```
+
+3. コンテナ管理ツールのインストール
+
+    以下からDocker Desktopインストールしてください。（ライセンス違反になるほう）
     ```
     https://docs.docker.com/desktop/install/windows-install/
     ```
-
-4. Docker Desktopの起動
-
-    インストールが完了したらDocker Desktopは起動したままにしてください。  
-    このアプリが起動していないと、dockerコマンドが実行できず、コンテナが動作しないため注意してください。
-
-5. コンテナの起動
-
-    最後に以下のコマンド実行すればBook Stationにアクセスできるようになります。
+    Rancher Desktopを使用する場合はこちら（ライセンス違反にならないほう）
     ```
-    docker-compose build
+    https://rancherdesktop.io/
+    ```
 
+4. コンテナイメージの作成
+
+    インストール完了後、コマンドプロンプトで以下のコマンドを実行してください。  
+    **※ docker-compose.ymlが配置されている階層で実行してください**
+    ```
+    cd C:\BookStation\books-container
+
+    docker-compose build
+    ```
+
+5. コンテナの作成・起動
+
+    最後に以下のコマンド実行すればBookStationに一定時間後にアクセスが可能となります。
+    ```
     docker-compose up -d
     ```
 
